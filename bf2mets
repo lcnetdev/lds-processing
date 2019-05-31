@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+
+import yaml
+import sys
+import os
+
+import datetime
+from time import gmtime, strftime, sleep
+import threading
+
+from os import listdir
+from os.path import isdir, isfile, join
+
+from modules.config_parser import args
+
+class Convert(threading.Thread):
+    def __init__(self, config, j, num):
+        threading.Thread.__init__(self)
+        self.config = config
+        self.j = j
+        self.n = num
+        
+    def run(self):
+        print("Processing job: " + str(self.n) + "; " + self.j["infile"] + "; " + self.j["outfile"])
+        
+        cmd = self.config["bf2mets"]["command"]
+        cmd = cmd.replace('%INFILE%', self.j["infile"])
+        cmd = cmd.replace('%OUTFILE%', self.j["outfile"])
+        # print(cmd)
+        os.system(cmd)  
+        threadPool.release()
+            
+class ThreadHandler(threading.Thread):
+    def __init__(self, config, jobs):
+        threading.Thread.__init__(self)
+        self.num = 0
+        self.config = config
+        self.jobs = jobs
+
+    def run(self):
+        for j in jobs:
+            self.num += 1
+            threadPool.acquire()
+            
+            pr = Convert(self.config, j, self.num)
+            pr.setDaemon(True)
+            pr.start()
+
+def dircontents(path, files):
+    for f in listdir(path):
+        fpath = join(path, f)
+        if isfile(fpath) and fpath.endswith('.xml'):
+            files.append(fpath)
+        elif isdir(fpath):
+            dircontents(fpath, files)
+    return files
+    
+config = yaml.safe_load(open(args.config))
+print()
+print("Config:")
+print(config)
+print()
+
+print(config["bf2mets"]["source_directory"])
+print()
+
+files = []
+files = dircontents(config["bf2mets"]["source_directory"], files)
+
+print(str(len(files)))
+files = files[:10]
+print(files)
+print(str(len(files)))
+print()
+# sys.exit(0)
+
+jobs = []
+for f in files:
+    
+    infile = f
+    outfile = config["bf2mets"]["target_directory"]
+    j = {
+        "infile": infile,
+        "outfile": outfile
+    }
+    jobs.append(j)
+
+#print(jobs)
+#print()
+#print()
+
+print()
+print("Number of threads: " + str(config["bf2mets"]["threads"]))
+print("Total number of jobs: " + str(len(jobs)))
+print()
+st = datetime.datetime.now()
+starttime = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+
+threadPool = threading.BoundedSemaphore(config["bf2mets"]["threads"])
+handler=ThreadHandler(config, jobs)
+handler.start()
+handler.join()
+
+gt = gmtime()
+endtime = strftime("%Y-%m-%d %H:%M:%S", gt)
+et = datetime.datetime.now()
+timedelta = et - st
+
+print()
+print()
+print ("Task started at: " + starttime)
+print ("Task ended at: " + endtime)
+print ("Elapsed time: ", str(timedelta))
+print()
+print()
+
+
+

@@ -1,0 +1,16 @@
+
+
+marcxml2bf:
+    threads: 5
+    command: xsltproc --stringparam baseuri http://id.loc.gov/resources/REPLACE/ --stringparam idsource http://id.loc.gov/vocabulary/organizations/dlcmrc /location/of/xsl/marc2bibframe2.xsl %INFILE% > %OUTFILE% 
+    marcxml_source_directory: /marcxml/source/dir/
+    bf_target_single_dir: true
+    bf_target_directory: /bf/target/dir/
+    
+bf2mets:
+    threads: 3
+    command: /where/zorba/is/installed/bin/zorba -i --serialize-text -q file:///source/xquery/resources2mets.xqy -e sourceuri:=%INFILE% -e savedir:=%OUTFILE% -e tableORschedule:= -e letter:=
+    source_directory: /bf/source/dir/
+    target_directory_single_dir: true
+    target_directory: /mets/target/dir/
+    
