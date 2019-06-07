@@ -67,11 +67,11 @@ print()
 files = []
 files = dircontents(config["bf2mets"]["source_directory"], files)
 
-print(str(len(files)))
-files = files[:10]
-print(files)
-print(str(len(files)))
-print()
+#print(str(len(files)))
+#files = files[:10]
+#print(files)
+#print(str(len(files)))
+#print()
 # sys.exit(0)
 
 jobs = []
