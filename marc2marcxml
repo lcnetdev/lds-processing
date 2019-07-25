@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+
+import yaml
+import sys
+import os
+
+import glob
+from shutil import copy
+
+import datetime
+from time import gmtime, strftime, sleep
+import threading
+
+from os import listdir
+from os.path import isdir, isfile, join
+
+from modules.config_parser import args
+
+class Convert(threading.Thread):
+    def __init__(self, config, j, num):
+        threading.Thread.__init__(self)
+        self.config = config
+        self.j = j
+        self.n = num
+        
+    def run(self):
+        print("Processing job: " + str(self.n) + "; " + self.j["infile"] + "; " + self.j["outfile"])
+        
+        # copy(self.j["infile"], self.j["outfile"])
+        
+        copycmd = "cp %INFILE% %OUTFILE%"
+        copycmd = copycmd.replace('%INFILE%', self.j["infile"])
+        copycmd = copycmd.replace('%OUTFILE%', self.j["tmpfile"])
+        print(copycmd)
+        if os.system(str(copycmd)):
+            raise RuntimeError('program {} failed!'.format(str(copycmd)))
+    
+        #ok = os.system(copycmd)
+        #print(ok)
+        
+        splitcmd = "yaz-marcdump -i marc -o marc -f UTF-8 -t UTF-8 -s %PREFIX% -C %CHUNK% %INFILE% > /dev/null"
+        print(splitcmd)
+        splitcmd = copycmd.replace('%CHUNK%', self.config["num_records_per_file"])
+        splitcmd = copycmd.replace('%PREFIX%', self.j["prefix"])
+        splitcmd = copycmd.replace('%INFILE%', self.j["tmpfile"])
+        print(splitcmd)
+        os.system(splitcmd)
+        
+        threadPool.release()
+            
+class ThreadHandler(threading.Thread):
+    def __init__(self, config, jobs):
+        threading.Thread.__init__(self)
+        self.num = 0
+        self.config = config
+        self.jobs = jobs
+
+    def run(self):
+        for j in jobs:
+            self.num += 1
+            threadPool.acquire()
+            
+            pr = Convert(self.config, j, self.num)
+            pr.setDaemon(True)
+            pr.start()
+
+def dircontents(path, find_pattern, files):
+    pattern = path + '**/*' + find_pattern
+    for fpath in glob.glob(pattern, recursive=True):
+        if isfile(fpath):
+            files.append(fpath)
+    return files
+    
+config = yaml.safe_load(open(args.config))
+print()
+print("Config:")
+print(config)
+print()
+
+jobconfig = config["marc2marcxml"]
+print(jobconfig)
+print()
+
+files = []
+files = dircontents(jobconfig["source_directory"], jobconfig["find_pattern"], files)
+
+'''
+Copy file to target directory
+run through yyaz-mardcymp to chunk
+create marcxml of each
+iconv
+'''
+
+#print(str(len(files)))
+# files = files[:10]
+#print(files)
+#print(str(len(files)))
+#print()
+
+pos = 1
+dirs = []
+jobs = []
+for f in files:
+    infile = f
+    outfile = f.replace(jobconfig["source_directory"], jobconfig["target_directory"])
+    prefix = "c" + str(pos) + "_"
+    tmpdir = jobconfig["tmp_processing_directory"] + prefix + "/"
+    tmpfile = tmpdir + f.replace(jobconfig["source_directory"], "")
+    j = {
+        "pos": pos,
+        "prefix": prefix,
+        "tmpdir": tmpdir,
+        "tmpfile": tmpfile,
+        "infile": infile,
+        "outfile": outfile
+    }
+    dirs.append(tmpdir)
+    jobs.append(j)
+    pos += 1
+
+print(jobs)
+print()
+print()
+
+for d in dirs:
+    os.makedirs(os.path.dirname(d), exist_ok=True)
+
+print()
+print("Number of threads: " + str(jobconfig["threads"]))
+print("Total number of jobs: " + str(len(jobs)))
+print()
+st = datetime.datetime.now()
+starttime = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+
+threadPool = threading.BoundedSemaphore(jobconfig["threads"])
+handler=ThreadHandler(jobconfig, jobs)
+handler.start()
+handler.join()
+
+gt = gmtime()
+endtime = strftime("%Y-%m-%d %H:%M:%S", gt)
+et = datetime.datetime.now()
+timedelta = et - st
+
+print()
+print()
+print ("Task started at: " + starttime)
+print ("Task ended at: " + endtime)
+print ("Elapsed time: ", str(timedelta))
+print()
+print()
+
+
+
