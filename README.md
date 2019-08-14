@@ -1,9 +1,11 @@
 # About
 
 This is small set of python scripts to assist with
+
 - Converting a batch of MARC ISO2709 files to MARC/XML
 - Converting MARCXML to Bibframe resources using the LC bibframe2marcxml2 conversion
-- Processing bibframe resources to METS files for loading.
+- Processing bibframe resources to METS files for loading
+
 at scale.
 
 They are used at LC so, for example, assume each MARC ISO2709 file contains 1,000,000
