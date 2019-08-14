@@ -91,10 +91,6 @@ for f in files:
     }
     jobs.append(j)
 
-#print(jobs)
-#print()
-#print()
-
 for d in dirs:
     os.makedirs(os.path.dirname(d), exist_ok=True)
 
