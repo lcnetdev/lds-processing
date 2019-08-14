@@ -87,6 +87,11 @@ for f in files:
         "outfile": outfile
     }
     jobs.append(j)
+    
+if jobconfig["clean_target_directory"]:
+    for f in glob.glob(jobconfig["target_directory"] + "*", recursive=False):
+        if isfile(f):
+            os.unlink(f)
 
 print()
 print("Number of threads: " + str(jobconfig["threads"]))

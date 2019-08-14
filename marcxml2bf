@@ -92,6 +92,11 @@ for f in files:
         "outfile": outfile
     }
     jobs.append(j)
+    
+if jobconfig["clean_target_directory"]:
+    for f in glob.glob(jobconfig["target_directory"] + "*", recursive=True):
+        if isfile(f):
+            os.unlink(f)
 
 for d in dirs:
     os.makedirs(os.path.dirname(d), exist_ok=True)
