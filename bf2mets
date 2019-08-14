@@ -23,7 +23,7 @@ class Convert(threading.Thread):
     def run(self):
         print("Processing job: " + str(self.n) + "; " + self.j["infile"] + "; " + self.j["outfile"])
         
-        cmd = self.config["bf2mets"]["command"]
+        cmd = self.jobconfig["command"]
         cmd = cmd.replace('%INFILE%', self.j["infile"])
         cmd = cmd.replace('%OUTFILE%', self.j["outfile"])
         # print(cmd)
@@ -61,11 +61,14 @@ print("Config:")
 print(config)
 print()
 
-print(config["bf2mets"]["source_directory"])
+jobconfig = config["bf2mets"]
+print("Job config:")
+print(jobconfig)
 print()
 
+
 files = []
-files = dircontents(config["bf2mets"]["source_directory"], files)
+files = dircontents(jobconfig["source_directory"], files)
 
 #print(str(len(files)))
 #files = files[:10]
@@ -78,25 +81,21 @@ jobs = []
 for f in files:
     
     infile = f
-    outfile = config["bf2mets"]["target_directory"]
+    outfile = jobconfig["target_directory"]
     j = {
         "infile": infile,
         "outfile": outfile
     }
     jobs.append(j)
 
-#print(jobs)
-#print()
-#print()
-
 print()
-print("Number of threads: " + str(config["bf2mets"]["threads"]))
+print("Number of threads: " + str(jobconfig["threads"]))
 print("Total number of jobs: " + str(len(jobs)))
 print()
 st = datetime.datetime.now()
 starttime = strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-threadPool = threading.BoundedSemaphore(config["bf2mets"]["threads"])
+threadPool = threading.BoundedSemaphore(jobconfig["threads"])
 handler=ThreadHandler(config, jobs)
 handler.start()
 handler.join()

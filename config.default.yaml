@@ -3,9 +3,9 @@
 marcxml2bf:
     threads: 5
     command: xsltproc --stringparam baseuri http://id.loc.gov/resources/REPLACE/ --stringparam idsource http://id.loc.gov/vocabulary/organizations/dlcmrc /location/of/xsl/marc2bibframe2.xsl %INFILE% > %OUTFILE% 
-    marcxml_source_directory: /marcxml/source/dir/
-    bf_target_single_dir: true
-    bf_target_directory: /bf/target/dir/
+    source_directory: /marcxml/source/dir/
+    target_directory_single_dir: true
+    target_directory: /bf/target/dir/
     
 bf2mets:
     threads: 3

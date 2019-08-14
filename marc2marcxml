@@ -67,6 +67,7 @@ print(config)
 print()
 
 jobconfig = config["marc2marcxml"]
+print("Job config:")
 print(jobconfig)
 print()
 

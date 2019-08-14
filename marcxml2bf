@@ -23,7 +23,7 @@ class Convert(threading.Thread):
     def run(self):
         print("Processing job: " + str(self.n) + "; " + self.j["infile"] + "; " + self.j["outfile"])
         
-        cmd = self.config["marcxml2bf"]["command"]
+        cmd = self.jobconfig["command"]
         cmd = cmd.replace('%INFILE%', self.j["infile"])
         cmd = cmd.replace('%OUTFILE%', self.j["outfile"])
         # print(cmd)
@@ -61,11 +61,13 @@ print("Config:")
 print(config)
 print()
 
-print(config["marcxml2bf"]["marcxml_source_directory"])
+jobconfig = config["marcxml2bf"]
+print("Job config:")
+print(jobconfig)
 print()
 
 files = []
-files = dircontents(config["marcxml2bf"]["marcxml_source_directory"], files)
+files = dircontents(jobconfig["source_directory"], files)
 
 #print(str(len(files)))
 # files = files[:10]
@@ -78,12 +80,12 @@ jobs = []
 for f in files:
     
     infile = f
-    if config["marcxml2bf"]["bf_target_single_dir"]:
-        outfile = f.replace(config["marcxml2bf"]["marcxml_source_directory"], '')
+    if jobconfig["target_directory_single_dir"]:
+        outfile = f.replace(jobconfig["source_directory"], '')
         outfile = outfile.replace('/', '_')
-        outfile = config["marcxml2bf"]["bf_target_directory"] + outfile
+        outfile = jobconfig["target_directory"] + outfile
     else:
-        outfile = f.replace(config["marcxml2bf"]["marcxml_source_directory"], config["marcxml2bf"]["bf_target_directory"])
+        outfile = f.replace(jobconfig["source_directory"], jobconfig["target_directory"])
         dirs.append(outfile)
     j = {
         "infile": infile,
@@ -95,13 +97,13 @@ for d in dirs:
     os.makedirs(os.path.dirname(d), exist_ok=True)
 
 print()
-print("Number of threads: " + str(config["bf2mets"]["threads"]))
+print("Number of threads: " + str(jobconfig["threads"]))
 print("Total number of jobs: " + str(len(jobs)))
 print()
 st = datetime.datetime.now()
 starttime = strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-threadPool = threading.BoundedSemaphore(config["marcxml2bf"]["threads"])
+threadPool = threading.BoundedSemaphore(jobconfig["threads"])
 handler=ThreadHandler(config, jobs)
 handler.start()
 handler.join()
