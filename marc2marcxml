@@ -5,64 +5,53 @@ import sys
 import os
 
 import glob
-from shutil import copy
+from shutil import rmtree
+
+import subprocess
+
+from multiprocessing.dummy import Pool as ThreadPool 
+import itertools
 
 import datetime
 from time import gmtime, strftime, sleep
-import threading
 
 from os import listdir
 from os.path import isdir, isfile, join
 
 from modules.config_parser import args
 
-class Convert(threading.Thread):
-    def __init__(self, config, j, num):
-        threading.Thread.__init__(self)
-        self.config = config
-        self.j = j
-        self.n = num
+def Convert(config, j):
+    config = config
+    n = j["pos"]
         
-    def run(self):
-        print("Processing job: " + str(self.n) + "; " + self.j["infile"] + "; " + self.j["outfile"])
-        
-        # copy(self.j["infile"], self.j["outfile"])
-        
-        copycmd = "cp %INFILE% %OUTFILE%"
-        copycmd = copycmd.replace('%INFILE%', self.j["infile"])
-        copycmd = copycmd.replace('%OUTFILE%', self.j["tmpfile"])
-        print(copycmd)
-        if os.system(str(copycmd)):
-            raise RuntimeError('program {} failed!'.format(str(copycmd)))
-    
-        #ok = os.system(copycmd)
-        #print(ok)
-        
-        splitcmd = "yaz-marcdump -i marc -o marc -f UTF-8 -t UTF-8 -s %PREFIX% -C %CHUNK% %INFILE% > /dev/null"
-        print(splitcmd)
-        splitcmd = copycmd.replace('%CHUNK%', self.config["num_records_per_file"])
-        splitcmd = copycmd.replace('%PREFIX%', self.j["prefix"])
-        splitcmd = copycmd.replace('%INFILE%', self.j["tmpfile"])
-        print(splitcmd)
-        os.system(splitcmd)
-        
-        threadPool.release()
-            
-class ThreadHandler(threading.Thread):
-    def __init__(self, config, jobs):
-        threading.Thread.__init__(self)
-        self.num = 0
-        self.config = config
-        self.jobs = jobs
+    print("Processing job: " + str(n) + "; " + j["infile"] + "; " + j["outfile"])
 
-    def run(self):
-        for j in jobs:
-            self.num += 1
-            threadPool.acquire()
-            
-            pr = Convert(self.config, j, self.num)
-            pr.setDaemon(True)
-            pr.start()
+    copycmd = "cp %INFILE% %OUTFILE%"
+    copycmd = copycmd.replace('%INFILE%', j["infile"])
+    copycmd = copycmd.replace('%OUTFILE%', j["tmpfile"])
+    returned_value = subprocess.Popen(copycmd, shell=True).wait()
+    
+    splitcmd = "cd %TMPDIR% && yaz-marcdump -i marc -o marc -f UTF-8 -t UTF-8 -s %PREFIX% -C %CHUNK% %INFILE% > /dev/null"
+    splitcmd = splitcmd.replace('%TMPDIR%', j["tmpdir"])
+    splitcmd = splitcmd.replace('%CHUNK%', str(config["num_records_per_file"]))
+    splitcmd = splitcmd.replace('%PREFIX%', j["prefix"])
+    splitcmd = splitcmd.replace('%INFILE%', j["tmpfile"])
+    print(splitcmd)
+    returned_value = subprocess.Popen(splitcmd, shell=True).wait()
+    
+    tomarcxmlcmd = "cd %TMPDIR% && for f in %PREFIX%*; do yaz-marcdump -i marc -o marcxml -f UTF-8 -t UTF-8 $f > $f.xml; done"
+    tomarcxmlcmd = tomarcxmlcmd.replace('%TMPDIR%', j["tmpdir"])
+    tomarcxmlcmd = tomarcxmlcmd.replace('%PREFIX%', j["prefix"])
+    returned_value = subprocess.Popen(tomarcxmlcmd, shell=True).wait()
+    
+    uconved = "cd %TMPDIR% && for f in %PREFIX%*.xml; do uconv -f utf8 -t utf8 -x nfc -c --from-callback skip --to-callback skip < $f > %TARGETDIR%$f; done"
+    uconved = uconved.replace('%TMPDIR%', j["tmpdir"])
+    uconved = uconved.replace('%PREFIX%', j["prefix"])
+    uconved = uconved.replace('%TARGETDIR%', config["target_directory"])
+    returned_value = subprocess.Popen(uconved, shell=True).wait()
+    
+    rmtree(j["tmpdir"])
+    
 
 def dircontents(path, find_pattern, files):
     pattern = path + '**/*' + find_pattern
@@ -83,13 +72,6 @@ print()
 
 files = []
 files = dircontents(jobconfig["source_directory"], jobconfig["find_pattern"], files)
-
-'''
-Copy file to target directory
-run through yyaz-mardcymp to chunk
-create marcxml of each
-iconv
-'''
 
 #print(str(len(files)))
 # files = files[:10]
@@ -122,6 +104,11 @@ print(jobs)
 print()
 print()
 
+if jobconfig["clean_target_directory"]:
+    for f in glob.glob(jobconfig["target_directory"] + "*", recursive=False):
+        if isfile(f):
+            os.unlink(f)
+
 for d in dirs:
     os.makedirs(os.path.dirname(d), exist_ok=True)
 
@@ -132,10 +119,16 @@ print()
 st = datetime.datetime.now()
 starttime = strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-threadPool = threading.BoundedSemaphore(jobconfig["threads"])
-handler=ThreadHandler(jobconfig, jobs)
-handler.start()
-handler.join()
+# make the Pool of workers
+pool = ThreadPool(jobconfig["threads"]) 
+
+# open the urls in their own threads
+# and return the results
+results = pool.starmap(Convert, zip(itertools.repeat(jobconfig), jobs))
+
+# close the pool and wait for the work to finish 
+pool.close() 
+pool.join() 
 
 gt = gmtime()
 endtime = strftime("%Y-%m-%d %H:%M:%S", gt)

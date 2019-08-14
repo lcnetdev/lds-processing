@@ -14,3 +14,11 @@ bf2mets:
     target_directory_single_dir: true
     target_directory: /mets/target/dir/
     
+marc2marcxml:
+    threads: 4
+    num_records_per_file: 5000
+    source_directory: /location/of/marc2709/files/
+    tmp_processing_directory: /tmp/
+    find_pattern: ""
+    clean_target_directory: true
+    target_directory: /location/of/output/marcxml/files/
