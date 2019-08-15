@@ -22,7 +22,7 @@ cd lds-processing
 pip install -r requirements.txt
 ~~~
 
-At this point you will need to modify at least one file to get going:
+At this point you will need to modify at least one file to get going, but see the below first:
 
 ~~~bash
 cp config/config.default.yaml config/config.yaml
@@ -38,12 +38,6 @@ finally ends by running each MARC/XML file through `uconv` to transcode each fil
 head off character issues.
 
 Prerequisite:  Ensure `yaz-marcdump` and `uconv` are installed.
-
-To run:
-
-~~~bash
-./marc2marcxml --config config/config.yaml
-~~~
 
 The config section:
 
@@ -67,18 +61,18 @@ MARC 2709 files.
 to the main function running.
 `target_directory` identifies the directory in which the program will write the output files.
 
+To run:
+
+~~~bash
+./marc2marcxml --config config/config.yaml
+~~~
+
 # marcxml2bf
 
 This process takes a directory of MARC/XML files and processes each through the 
 marc2bibframe2 XSLT-based conversion.
 
 Prerequisite:  Install and configure [marc2bibframe2](https://github.com/lcnetdev/marc2bibframe2)
-
-To run:
-
-~~~bash
-./marcxml2bf --config config/config.yaml
-~~~
 
 The config section:
 
@@ -101,6 +95,12 @@ run time by the script itself.
 come from a multiple sub-directories (within the `source_directory`), the output will be saved in corresponding 
 sub-directories in the `target_directory`.
 
+To run:
+
+~~~bash
+./marcxml2bf --config config/config.yaml
+~~~
+
 # bf2mets
 
 This may disappear, to be replaced with a more abstract process that would permit
@@ -109,12 +109,6 @@ But as it is here now...  This will take a directory of RDF/XML files in which a
 Bibframe resources and process them into METS files for loading to ID.LOC.GOV.
 
 Prerequisite:  Install and configure [zorba](https://github.com/zorba-processor/zorba)
-
-To run:
-
-~~~bash
-./bf2mets --config config/config.yaml
-~~~
 
 The config section:
 
@@ -130,6 +124,11 @@ The config section:
 For `threads`, `source_directory`, `clean_target_directory`, and `target_directory` see the *marc2marcxml* section.
 For `command` and `target_directory_single_dir` see the *marcxml2bf* section.
 
+To run:
+
+~~~bash
+./bf2mets --config config/config.yaml
+~~~
 
 # License
 As a work of the United States government, this project is in the
