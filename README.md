@@ -1,9 +1,11 @@
 # About
 
 This is small set of python scripts to assist with
+
 - Converting a batch of MARC ISO2709 files to MARC/XML
 - Converting MARCXML to Bibframe resources using the LC bibframe2marcxml2 conversion
-- Processing bibframe resources to METS files for loading.
+- Processing bibframe resources to METS files for loading
+
 at scale.
 
 They are used at LC so, for example, assume each MARC ISO2709 file contains 1,000,000
@@ -90,7 +92,7 @@ For `threads`, `source_directory`, `clean_target_directory`, and `target_directo
 
 `command` is the base command that will run.  Take note that it includes variables you can set for the 
 actual marcxml2bibframe2 conversion.  %INFILE% and %OUTFILE% will be replaced with appropriate values at 
-run time by the script itself.
+run time by the script itself.  
 `target_directory_single_dir` will save all of the output files in a single directory.  Otherwise, if the source files 
 come from a multiple sub-directories (within the `source_directory`), the output will be saved in corresponding 
 sub-directories in the `target_directory`.
@@ -104,8 +106,8 @@ To run:
 # bf2mets
 
 This may disappear, to be replaced with a more abstract process that would permit
-the processing of arbitrary RDF resources into METS files, to be loaded to ID.LOC.GOV.  
-But as it is here now...  This will take a directory of RDF/XML files in which are 
+the processing of arbitrary RDF resources into METS files, to be loaded to ID. But 
+as it is here now...  This will take a directory of RDF/XML files in which are 
 Bibframe resources and process them into METS files for loading to ID.LOC.GOV.
 
 Prerequisite:  Install and configure [zorba](https://github.com/zorba-processor/zorba)
