@@ -4,47 +4,30 @@ import yaml
 import sys
 import os
 
+import glob
+
 import datetime
 from time import gmtime, strftime, sleep
-import threading
+
+from multiprocessing.dummy import Pool as ThreadPool 
+import itertools
 
 from os import listdir
 from os.path import isdir, isfile, join
 
 from modules.config_parser import args
 
-class Convert(threading.Thread):
-    def __init__(self, config, j, num):
-        threading.Thread.__init__(self)
-        self.config = config
-        self.j = j
-        self.n = num
-        
-    def run(self):
-        print("Processing job: " + str(self.n) + "; " + self.j["infile"] + "; " + self.j["outfile"])
-        
-        cmd = self.jobconfig["command"]
-        cmd = cmd.replace('%INFILE%', self.j["infile"])
-        cmd = cmd.replace('%OUTFILE%', self.j["outfile"])
-        # print(cmd)
-        os.system(cmd)  
-        threadPool.release()
-            
-class ThreadHandler(threading.Thread):
-    def __init__(self, config, jobs):
-        threading.Thread.__init__(self)
-        self.num = 0
-        self.config = config
-        self.jobs = jobs
-
-    def run(self):
-        for j in jobs:
-            self.num += 1
-            threadPool.acquire()
-            
-            pr = Convert(self.config, j, self.num)
-            pr.setDaemon(True)
-            pr.start()
+def Convert(config, j):
+    config = config
+    n = j["pos"]
+    
+    print("Processing job: " + str(n) + "; " + j["infile"] + "; " + j["outfile"])
+    
+    cmd = config["command"]
+    cmd = cmd.replace('%INFILE%', j["infile"])
+    cmd = cmd.replace('%OUTFILE%', j["outfile"])
+    # print(cmd)
+    os.system(cmd)
 
 def dircontents(path, files):
     for f in listdir(path):
@@ -77,16 +60,19 @@ files = dircontents(jobconfig["source_directory"], files)
 #print()
 # sys.exit(0)
 
+pos = 1
 jobs = []
 for f in files:
     
     infile = f
     outfile = jobconfig["target_directory"]
     j = {
+        "pos": pos,
         "infile": infile,
         "outfile": outfile
     }
     jobs.append(j)
+    pos += 1
     
 if jobconfig["clean_target_directory"]:
     for f in glob.glob(jobconfig["target_directory"] + "*", recursive=False):
@@ -100,10 +86,16 @@ print()
 st = datetime.datetime.now()
 starttime = strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-threadPool = threading.BoundedSemaphore(jobconfig["threads"])
-handler=ThreadHandler(config, jobs)
-handler.start()
-handler.join()
+# make the Pool of workers
+pool = ThreadPool(jobconfig["threads"]) 
+
+# open the urls in their own threads
+# and return the results
+results = pool.starmap(Convert, zip(itertools.repeat(jobconfig), jobs))
+
+# close the pool and wait for the work to finish 
+pool.close() 
+pool.join() 
 
 gt = gmtime()
 endtime = strftime("%Y-%m-%d %H:%M:%S", gt)
