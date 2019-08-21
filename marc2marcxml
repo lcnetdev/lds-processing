@@ -73,10 +73,17 @@ print()
 
 files = []
 files = dircontents(jobconfig["source_directory"], jobconfig["find_pattern"], files)
+print("Pre-sort:")
+print(files)
+print()
+files.sort()
 
 #print(str(len(files)))
 # files = files[:10]
-#print(files)
+print()
+print("Post sort:")
+print(files)
+print()
 #print(str(len(files)))
 #print()
 
@@ -86,7 +93,7 @@ jobs = []
 for f in files:
     infile = f
     outfile = f.replace(jobconfig["source_directory"], jobconfig["target_directory"])
-    prefix = "c" + str(pos) + "_"
+    prefix = "c" + str(pos).zfill(4) + "_"
     tmpdir = jobconfig["tmp_processing_directory"] + prefix + "/"
     tmpfile = tmpdir + f.replace(jobconfig["source_directory"], "")
     j = {
