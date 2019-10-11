@@ -8,7 +8,7 @@ marcxml2bf:
     target_directory_single_dir: true
     target_directory: /bf/target/dir/
     
-bf2mets:
+source2mets:
     threads: 3
     command: /where/zorba/is/installed/bin/zorba -i --serialize-text -q file:///source/xquery/resources2mets.xqy -e sourceuri:=%INFILE% -e savedir:=%OUTFILE% -e tableORschedule:= -e letter:=
     source_directory: /bf/source/dir/

@@ -44,7 +44,7 @@ print("Config:")
 print(config)
 print()
 
-jobconfig = config["bf2mets"]
+jobconfig = config["source2mets"]
 print("Job config:")
 print(jobconfig)
 print()
