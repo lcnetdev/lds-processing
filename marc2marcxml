@@ -26,24 +26,29 @@ def Convert(config, j):
         
     print("Processing job: " + str(n) + "; " + j["infile"] + "; " + j["outfile"])
 
+    print("Copying {} {}".format(j["infile"], j["tmpfile"]))
     copycmd = "cp %INFILE% %OUTFILE%"
     copycmd = copycmd.replace('%INFILE%', j["infile"])
     copycmd = copycmd.replace('%OUTFILE%', j["tmpfile"])
     returned_value = subprocess.Popen(copycmd, shell=True).wait()
     
+    print("Splitting {} into {} chunks with prefix {}".format(j["tmpfile"], config["num_records_per_file"], j["prefix"]))
     splitcmd = "cd %TMPDIR% && yaz-marcdump -i marc -o marc -f UTF-8 -t UTF-8 -s %PREFIX% -C %CHUNK% %INFILE% > /dev/null"
     splitcmd = splitcmd.replace('%TMPDIR%', j["tmpdir"])
     splitcmd = splitcmd.replace('%CHUNK%', str(config["num_records_per_file"]))
     splitcmd = splitcmd.replace('%PREFIX%', j["prefix"])
     splitcmd = splitcmd.replace('%INFILE%', j["tmpfile"])
-    print(splitcmd)
+    # print(splitcmd)
     returned_value = subprocess.Popen(splitcmd, shell=True).wait()
     
+    print("Converting {} ISO2709 to MARC/XML".format(j["prefix"], config["num_records_per_file"], j["prefix"]))
     tomarcxmlcmd = "cd %TMPDIR% && for f in %PREFIX%*; do yaz-marcdump -i marc -o marcxml -f UTF-8 -t UTF-8 $f > $f.xml; done"
     tomarcxmlcmd = tomarcxmlcmd.replace('%TMPDIR%', j["tmpdir"])
     tomarcxmlcmd = tomarcxmlcmd.replace('%PREFIX%', j["prefix"])
+    # print(tomarcxmlcmd)
     returned_value = subprocess.Popen(tomarcxmlcmd, shell=True).wait()
     
+    print("Uconving {}*.xml".format(j["prefix"]))
     uconved = "cd %TMPDIR% && for f in %PREFIX%*.xml; do uconv -f utf8 -t utf8 -x nfc -c --from-callback skip --to-callback skip < $f > %TARGETDIR%$f; done"
     uconved = uconved.replace('%TMPDIR%', j["tmpdir"])
     uconved = uconved.replace('%PREFIX%', j["prefix"])
@@ -118,6 +123,7 @@ if jobconfig["clean_target_directory"]:
             os.unlink(f)
 
 for d in dirs:
+    print("Making dir: " + d)
     os.makedirs(os.path.dirname(d), exist_ok=True)
 
 print()
