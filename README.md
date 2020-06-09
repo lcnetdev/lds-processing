@@ -19,7 +19,7 @@ designed to run on a *nix machine.
 virtualenv -p python3 ldspenv
 cd ldspenv
 . bin/activate
-git clone https://github.com/kefo/lds-processing.git
+git clone https://github.com/lcnetdev/lds-processing.git
 cd lds-processing
 pip install -r requirements.txt
 ~~~
@@ -64,6 +64,10 @@ to the main function running.
 `target_directory` identifies the directory in which the program will write the output files.
 
 To run:
+For each session, you need to activate the environment:
+~~~bash
+. bin/activate
+~~~
 
 ~~~bash
 ./marc2marcxml --config config/config.yaml
