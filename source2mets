@@ -28,6 +28,10 @@ def Convert(config, j):
     cmd = cmd.replace('%OUTFILE%', j["outfile"])
     # print(cmd)
     os.system(cmd)
+    
+    # Usually move these, but they all end up with the same name day after day
+    # so going to delete for now......
+    os.unlink(j["infile"])
 
 def dircontents(path, files):
     for f in listdir(path):
