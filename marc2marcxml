@@ -48,6 +48,12 @@ def Convert(config, j):
     # print(tomarcxmlcmd)
     returned_value = subprocess.Popen(tomarcxmlcmd, shell=True).wait()
     
+    print("Removing instances of '[from old catalog]' from {}*.xml".format(j["prefix"]))
+    from_old_catalog = "cd %TMPDIR% && for f in %PREFIX%*.xml; do mv $f $f.tmp; sed -e \"s|\[from old catalog\]||g\" < $f.tmp > $f; done"
+    from_old_catalog = from_old_catalog.replace('%TMPDIR%', j["tmpdir"])
+    from_old_catalog = from_old_catalog.replace('%PREFIX%', j["prefix"])
+    returned_value = subprocess.Popen(from_old_catalog, shell=True).wait()
+    
     print("Uconving {}*.xml".format(j["prefix"]))
     uconved = "cd %TMPDIR% && for f in %PREFIX%*.xml; do uconv -f utf8 -t utf8 -x nfc -c --from-callback skip --to-callback skip < $f > %TARGETDIR%$f; done"
     uconved = uconved.replace('%TMPDIR%', j["tmpdir"])
