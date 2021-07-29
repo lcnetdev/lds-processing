@@ -1,4 +1,22 @@
-
+marc2post:
+    threads: 8
+    sources: 
+        -
+            source_directory: /marc/iso2709/source/bibs_daily_unsuppressed/
+            file_pattern: unsuppressed.bib.d%SOURCEDATE%
+            "%SOURCEDATE%": '%y%m%d'
+        -
+            source_directory: /marc/iso2709/source/bibs_daily_suppressed/
+            file_pattern: suppressed.bib.d%SOURCEDATE%
+            "%SOURCEDATE%": '%y%m%d'
+        -
+            source_directory: /marc/iso2709/source/deletedbibs/
+            file_pattern: deleted.bib.marc.%SOURCEDATE%
+            "%SOURCEDATE%": '%y%m%d'
+    target: 
+        endpoint: https://host/import/
+        username: user
+        password: pass
 
 marcxml2bf:
     threads: 5
