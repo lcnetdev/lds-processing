@@ -124,7 +124,7 @@ for d in days:
                                 indicators = [' ', ' '],
                                 subfields = [
                                     'a','opacsuppress',
-                                    'd', datetime.today()
+                                    'd', datetime.today().strftime('%Y-%m-%d %H:%M:%S')
                                 ]
                             )
                         )
