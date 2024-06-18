@@ -117,7 +117,7 @@ for d in days:
             for r in reader:
                 try:
                     # Add the suppression status to the record
-                    if 'unsuppressed' not in f:
+                    if 'unsuppressed' not in f or 'delete' in f:
                         r.add_field(
                             Field(
                                 tag = '993',
