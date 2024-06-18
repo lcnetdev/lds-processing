@@ -149,15 +149,15 @@ for d in days:
 
         # 2024-06-18: `suppression` was moved into the MARC record above removing the need to pass it as a URL paramter
         # -Franz Osorio
-        # if 'delete' in f:
-        #     load_report["deletes"] += len(marcxml_records)
-        #     suppress_status = "deleted" #Suppressing seems to make sense, though not quite right.
-        # elif 'unsuppressed' not in f:
-        #     load_report["suppressed"] += len(marcxml_records)
-        #     suppress_status = "suppressed"
-        # else:
-        #     load_report["unsuppressed"] += len(marcxml_records)
-        #     suppress_status = "unsuppressed"
+        if 'delete' in f:
+            load_report["deletes"] += len(marcxml_records)
+            # suppress_status = "deleted" #Suppressing seems to make sense, though not quite right.
+        elif 'unsuppressed' not in f:
+            load_report["suppressed"] += len(marcxml_records)
+            # suppress_status = "suppressed"
+        else:
+            load_report["unsuppressed"] += len(marcxml_records)
+            # suppress_status = "unsuppressed"
 
         futures = [
             session.post(jobconfig["target"]["endpoint"], auth=auth, headers=headers, data=r.encode('utf-8'))
