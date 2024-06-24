@@ -1,26 +1,22 @@
 #!/usr/bin/env python
 
-import sys
 import json
-from os import path
 import re
+import sys
+import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta
+from os import listdir, path
+from os.path import isdir, isfile, join
+from time import gmtime, strftime
 
 import yaml
 from modules.config_parser import args
-
-from datetime import datetime, timedelta
-from time import gmtime, strftime
-
-from os import listdir
-from os.path import isdir, isfile, join
-
-from requests_futures import sessions
-# from multiprocessing.dummy import Pool as ThreadPool 
-
-import xml.etree.ElementTree as ET
-from pymarc import MARCReader
-from pymarc import XMLWriter
+from pymarc import Field, MARCReader, XMLWriter
 from pymarc.marcxml import record_to_xml, record_to_xml_node
+from requests_futures import sessions
+
+# from multiprocessing.dummy import Pool as ThreadPool
+
 
 config = yaml.safe_load(open(args.config))
 print()
@@ -65,7 +61,7 @@ if (yesterday_formatted != startdate_formatted):
         nextday = nextday + timedelta(days=1)
         nextday_formatted_sourcedate = datetime.strftime(nextday, date_format)
         dates.append(nextday_formatted_sourcedate)
-        
+
 print(dates)
 
 days = {}
@@ -84,8 +80,8 @@ for d in dates:
 def process_ingest_response(f):
     global load_report
     try:
-        r = { 
-            "status_code": f.result().status_code, 
+        r = {
+            "status_code": f.result().status_code,
             "output": f.result().content
         }
         if "Location" not in f.result().headers:
@@ -120,6 +116,18 @@ for d in days:
             reader = MARCReader(fh)
             for r in reader:
                 try:
+                    # Add the suppression status to the record
+                    if 'unsuppressed' not in f or 'delete' in f:
+                        r.add_field(
+                            Field(
+                                tag = '993',
+                                indicators = [' ', ' '],
+                                subfields = [
+                                    'a','opacsuppress',
+                                    'd', datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+                                ]
+                            )
+                        )
                     bytesxml = record_to_xml_node(r, False, True)
                     # This is necessary otherwise the default output is to encode
                     # special characters using &#1234 convention.
@@ -138,33 +146,35 @@ for d in days:
                     print('Error generating MARC/XML, e_type: {}'.format(e_type))
                     print('Error generating MARC/XML, e_value: {}'.format(e_value))
                     print('Error generating MARC/XML, e_traceback: {}'.format(e_traceback))
-                
+
+        # 2024-06-18: `suppression` was moved into the MARC record above removing the need to pass it as a URL paramter
+        # -Franz Osorio
         if 'delete' in f:
             load_report["deletes"] += len(marcxml_records)
-            suppress_status = "deleted" #Suppressing seems to make sense, though not quite right.
+            # suppress_status = "deleted" #Suppressing seems to make sense, though not quite right.
         elif 'unsuppressed' not in f:
             load_report["suppressed"] += len(marcxml_records)
-            suppress_status = "suppressed"
+            # suppress_status = "suppressed"
         else:
             load_report["unsuppressed"] += len(marcxml_records)
-            suppress_status = "unsuppressed"
-        
+            # suppress_status = "unsuppressed"
+
         futures = [
-            session.post(jobconfig["target"]["endpoint"] + "?suppress_status=" + suppress_status, auth=auth, headers=headers, data=r.encode('utf-8'))
+            session.post(jobconfig["target"]["endpoint"], auth=auth, headers=headers, data=r.encode('utf-8'))
             for r in marcxml_records
         ]
         results = [
             process_ingest_response(f)
             for f in futures
         ]
-        
+
 et = datetime.now()
 endtime = et.isoformat()[:19]
 timedelta = et - st
 
 load_report["job_end"] = endtime
 load_report["status"] = "success"
-    
+
 print('************')
 print('************')
 print('Job started at: {}'.format(starttime))
