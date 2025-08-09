@@ -117,17 +117,17 @@ for d in days:
             for r in reader:
                 try:
                     # Add the suppression status to the record
-                    if 'unsuppressed' not in f or 'delete' in f:
-                        r.add_field(
-                            Field(
-                                tag = '993',
-                                indicators = [' ', ' '],
-                                subfields = [
-                                    'a','opacsuppress',
-                                    'd', datetime.today().strftime('%Y-%m-%d')
-                                ]
-                            )
-                        )
+                    #if 'unsuppressed' not in f or 'delete' in f:
+                    #    r.add_field(
+                    #        Field(
+                    #            tag = '993',
+                    #            indicators = [' ', ' '],
+                    #            subfields = [
+                    #               'a','opacsuppress',
+                    #                'd', datetime.today().strftime('%Y-%m-%d')
+                    #            ]
+                    #        )
+                    #    )
                     bytesxml = record_to_xml_node(r, False, True)
                     # This is necessary otherwise the default output is to encode
                     # special characters using &#1234 convention.
@@ -159,8 +159,9 @@ for d in days:
             load_report["unsuppressed"] += len(marcxml_records)
             # suppress_status = "unsuppressed"
 
+        # Always load composed=False because there will almost always be more than 200 records.
         futures = [
-            session.post(jobconfig["target"]["endpoint"], auth=auth, headers=headers, data=r.encode('utf-8'))
+            session.post(jobconfig["target"]["endpoint"] + "?composed=0", auth=auth, headers=headers, data=r.encode('utf-8'))
             for r in marcxml_records
         ]
         results = [
@@ -168,6 +169,15 @@ for d in days:
             for f in futures
         ]
 
+print("Issuing 'generate-and-store-composed' task.")
+s = session.post(jobconfig["target"]["endpoint"].split('/controllers')[0] + '/controllers/tasks/generate-and-store-bf-composed.xqy?dryrun=0&since=' + starttime, auth=auth, headers=headers, data="")
+s_result = s.result()
+print('Status of task request: {}'.format(s_result.status_code))
+if s_result.status_code == 202:
+    print('Task Report: {}'.format(s_result.headers["Location"]))
+else:
+    print('Task failure: {}'.format(s_result.headers))
+        
 et = datetime.now()
 endtime = et.isoformat()[:19]
 timedelta = et - st
